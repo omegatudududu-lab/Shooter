@@ -2,6 +2,10 @@ import pygame
 import random
 import json
 from settings import *
+from GameObject import *
+from Player import *
+from Enemy import *
+from Cartridge import *
 
 # Ініціалізація модулів Pygame (екран, звуки, шрифти) 12312
 print("hello")
@@ -15,6 +19,10 @@ background = pygame.transform.scale(BACKGROUND_IMAGE_PATH, (WINDOW_WIDTH, WINDOW
 # Налаштування звуку 
 shoot_sound = pygame.mixer.Sound(DEFAULT_BLASTER_FIRE_SOUND_EFFECT)
 shoot_sound.set_volume(0.3)
+
+player_sounds = {
+    "shoot_sound": shoot_sound 
+}
 
 # Завантаження фонової музики
 background_sound = pygame.mixer.music.load(BACKGROUND_SOUND)
@@ -31,32 +39,6 @@ clock = pygame.time.Clock()
 running = True
 
 
-class GameObject(pygame.sprite.Sprite):
-    """Базовий клас для всіх рухомих об'єктів у грі."""
-    def __init__(self, filename, x, y, w, h):
-        # Ініціалізація суперкласу Sprite для роботи груп
-        pygame.sprite.Sprite.__init__(self)
-        super().__init__()
-
-        # Хітбокс об'єкта
-        self.rect = pygame.Rect(x, y, w, h)
-
-        # Завантаження та масштабування текстури під розмір хітбокса
-        self.image = pygame.image.load(filename)
-        self.image = pygame.transform.scale(self.image, (w, h))
-
-        # Базова швидкість руху об'єкта за замовчуванням
-        self.speed = DEFAULT_SPEED
-
-
-    def draw(self):
-        """Малювання об'єкта на екрані за його поточними координатами."""
-        screen.blit(self.image, (self.rect.x, self.rect.y))
-
-
-    def is_collide(self, gameObject: "GameObject"):
-        """Ручна перевірка зіткнення з іншим об'єктом через прямокутники."""
-        return self.rect.colliderect(gameObject.rect)
 
 
 class Label():
@@ -80,108 +62,26 @@ class Label():
         
         
 
-class Player(GameObject):
-    """Клас гравця, яким керує користувач."""
-    def __init__(self, filename, x, y, w, h):
-        super().__init__(filename, x, y, w, h) 
-        # Встановлюємо початкове здоров'я з файлу налаштувань
-        self.hp = Player_health
-
-
-    def update(self):
-        """Оновлення позиції гравця на основі натиснутих клавіш."""
-        # Отримуємо стан усіх клавіш клавіатури
-        keys = pygame.key.get_pressed()
-
-        # Рух гравця по осях (управління WASD)
-        if keys[pygame.K_a]:
-            self.rect.x -= self.speed
-        if keys[pygame.K_d]:
-            self.rect.x += self.speed
-        if keys[pygame.K_w]:
-            self.rect.y -= self.speed
-        if keys[pygame.K_s]:
-            self.rect.y += self.speed
-        
-        # Обмеження: гравець не може вилетіти за ліву чи праву межі екрана
-        if self.rect.x < 0:
-            self.rect.x = 0
-        if self.rect.x > WINDOW_WIDTH - self.rect.width:
-            self.rect.x = WINDOW_WIDTH - self.rect.width
-
-        # Обмеження: гравець не може вилетіти за верхню чи нижню межі екрана
-        if self.rect.y < 0:
-            self.rect.y = 0
-        if self.rect.y > WINDOW_HEIGHT - self.rect.height:
-            self.rect.y = WINDOW_HEIGHT - self.rect.height
-
-    def shoot(self):
-        """Створення патрона по центру гравця та запуск звукуポストрілу."""
-        # Розраховуємо координати так, щоб куля вилітала точно з центру корабля
-        c = Cartridge(
-            BULLET_IMAGE_PATH,
-            self.rect.x + PLAYER_HITBOX_SIZE_X/2 - BULLET_HITBOX_WIDTH/2,
-            self.rect.y + PLAYER_HITBOX_SIZE_Y/2,
-            BULLET_HITBOX_WIDTH ,
-            BULLET_HITBOX_HEIGHT)
-        # Додаємо створений патрон у групу для автоматичного оновлення та малювання
-        cartridgies.add(c)
-        shoot_sound.play()
-
-    def take_damage(self, damage = 1):
-        """Зменшення здоров'я гравця при отриманні урону."""
-        # Робимо змінну циклу глобальною, щоб зупинити гру при смерті
-        global running
-        self.hp -= damage
-        print(f"Гравець отримав урон! Поточне HP: {self.hp}") # Допоможе в дебазі
-        if self.hp <= 0:
-            print("Player has been died")
-            self.kill()
-            running = False
-
 
             
-class Cartridge(GameObject):
-    """Клас патрона, який летить вгору."""
-    def update(self):
-        # Рух патрона вгору (зменшення координати Y)
-        self.rect.y -= self.speed
-        
-        # Якщо патрон вилетів далеко за екран — видаляємо його для оптимізації пам'яті
-        if self.rect.y < 0 - 80:
-            self.kill()
+
         
         
-class Enemy(GameObject):
-    """Клас ворога, який летить вниз."""
-    def __init__(self, filename, x, y, w, h):
-        super().__init__(filename, x, y, w, h)
-        self.hp = Enemy_health
-        self.speed = ENEMY_SPEED
-        
-    def update(self):
-        # Рух ворога вниз (збільшення координати Y)
-        self.rect.y += self.speed
-        
-        # Якщо ворог долетів до низу екрана, повертаємо його нагору у випадкову точку X
-        if self.rect.y > WINDOW_WIDTH:
-            self.rect.y = 0 - self.rect.height*2
-            self.rect.x = random.randint(0, WINDOW_WIDTH-ENEMY_HITBOX_SIZE)
-            
-    def take_damage(self, damage = 1):
-        """Отримання урону ворогом."""
-        self.hp -= damage
-        # Якщо здоров'я закінчилося — знищуємо ворога
-        if self.hp <= 0:
-            self.kill()
-            # Надсилаємо системну подію про вбивство ворога для оновлення рахунку
-            pygame.event.post(pygame.event.Event(EVENT_ENEMY_KILLED))
+enemies = pygame.sprite.Group()
+cartridgies = pygame.sprite.Group()
 
 
 # Створення об'єкта гравця та груп спрайтів для ворогів і патронів
-player = Player(PLAYER_IMAGE_PATH, 350, 500, PLAYER_HITBOX_SIZE_X, PLAYER_HITBOX_SIZE_Y)  
-enemies = pygame.sprite.Group()
-cartridgies = pygame.sprite.Group()
+player = Player(
+    PLAYER_IMAGE_PATH,
+    350, 
+    500, 
+    PLAYER_HITBOX_SIZE_X, 
+    PLAYER_HITBOX_SIZE_Y,
+    player_sounds,
+    cartridgies
+    )  
+
 
 # Цикл для спавну початкових 6 ворогів у випадкових точках над екраном
 for i in range(6):
@@ -246,7 +146,7 @@ while running:
     
     # 2. Потім малюємо модельку гравця поверх них
     if player.hp > 0:
-        player.draw()
+        player.draw(screen)
         
     # 3. Наприкінці малюємо інтерфейс (рахунок)
     score_label.draw()
@@ -265,7 +165,7 @@ while running:
 
     # 2. Зіткнення гравця з ворогами. Ворог зникає (True), бо врізався
     # Перевіряємо, чи живий гравець, перед обробкою зіткнення з ним
-    if player.hp > 0:
+    if player.hp > 1:
         hits_enemy_player = pygame.sprite.spritecollide(player, enemies, True)
 
         for enemy in hits_enemy_player:
@@ -274,9 +174,14 @@ while running:
             score_label.set_text(score_text)
             # Зменшуємо здоров'я гравця на 1 за кожного ворога
             player.take_damage()
-    
+    else:
+        running = False
+        with open("file.json", "w", encoding="UTF-8") as file:
+            data["score"] = score_counter
+            json.dump(data, file, indent=4)
         
     pygame.display.update()
 
 
 pygame.quit()
+
