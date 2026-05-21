@@ -1,3 +1,6 @@
+import pygame
+from settings import *
+
 class GameObject(pygame.sprite.Sprite):
     """Базовий клас для всіх рухомих об'єктів у грі."""
     def __init__(self, filename, x, y, w, h):
@@ -16,7 +19,7 @@ class GameObject(pygame.sprite.Sprite):
         self.speed = DEFAULT_SPEED
 
 
-    def draw(self):
+    def draw(self, screen):
         """Малювання об'єкта на екрані за його поточними координатами."""
         screen.blit(self.image, (self.rect.x, self.rect.y))
 

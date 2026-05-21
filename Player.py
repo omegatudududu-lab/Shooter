@@ -1,9 +1,15 @@
+from GameObject import *
+from settings import *
+from Cartridge import Cartridge
 class Player(GameObject):
     """Клас гравця, яким керує користувач."""
-    def __init__(self, filename, x, y, w, h):
+    def __init__(self, filename, x, y, w, h, player_sound, cartridgies):
         super().__init__(filename, x, y, w, h) 
         # Встановлюємо початкове здоров'я з файлу налаштувань
         self.hp = Player_health
+        self.player_sound = player_sound
+        self.cartridgies = cartridgies
+        
 
 
     def update(self):
@@ -43,8 +49,8 @@ class Player(GameObject):
             BULLET_HITBOX_WIDTH ,
             BULLET_HITBOX_HEIGHT)
         # Додаємо створений патрон у групу для автоматичного оновлення та малювання
-        cartridgies.add(c)
-        shoot_sound.play()
+        self.cartridgies.add(c)
+        self.player_sound["shoot_sound"].play()
 
     def take_damage(self, damage = 1):
         """Зменшення здоров'я гравця при отриманні урону."""
@@ -55,5 +61,4 @@ class Player(GameObject):
         if self.hp <= 0:
             print("Player has been died")
             self.kill()
-            running = False
 
