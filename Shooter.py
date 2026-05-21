@@ -2,6 +2,8 @@ import pygame
 import random
 import json
 from settings import *
+from GameObject import *
+from Player import *
 
 # Ініціалізація модулів Pygame (екран, звуки, шрифти) 12312
 print("hello")
@@ -31,32 +33,6 @@ clock = pygame.time.Clock()
 running = True
 
 
-class GameObject(pygame.sprite.Sprite):
-    """Базовий клас для всіх рухомих об'єктів у грі."""
-    def __init__(self, filename, x, y, w, h):
-        # Ініціалізація суперкласу Sprite для роботи груп
-        pygame.sprite.Sprite.__init__(self)
-        super().__init__()
-
-        # Хітбокс об'єкта
-        self.rect = pygame.Rect(x, y, w, h)
-
-        # Завантаження та масштабування текстури під розмір хітбокса
-        self.image = pygame.image.load(filename)
-        self.image = pygame.transform.scale(self.image, (w, h))
-
-        # Базова швидкість руху об'єкта за замовчуванням
-        self.speed = DEFAULT_SPEED
-
-
-    def draw(self):
-        """Малювання об'єкта на екрані за його поточними координатами."""
-        screen.blit(self.image, (self.rect.x, self.rect.y))
-
-
-    def is_collide(self, gameObject: "GameObject"):
-        """Ручна перевірка зіткнення з іншим об'єктом через прямокутники."""
-        return self.rect.colliderect(gameObject.rect)
 
 
 class Label():
@@ -79,65 +55,6 @@ class Label():
         self.text = self.font.render(new_text, True, self.color)
         
         
-
-class Player(GameObject):
-    """Клас гравця, яким керує користувач."""
-    def __init__(self, filename, x, y, w, h):
-        super().__init__(filename, x, y, w, h) 
-        # Встановлюємо початкове здоров'я з файлу налаштувань
-        self.hp = Player_health
-
-
-    def update(self):
-        """Оновлення позиції гравця на основі натиснутих клавіш."""
-        # Отримуємо стан усіх клавіш клавіатури
-        keys = pygame.key.get_pressed()
-
-        # Рух гравця по осях (управління WASD)
-        if keys[pygame.K_a]:
-            self.rect.x -= self.speed
-        if keys[pygame.K_d]:
-            self.rect.x += self.speed
-        if keys[pygame.K_w]:
-            self.rect.y -= self.speed
-        if keys[pygame.K_s]:
-            self.rect.y += self.speed
-        
-        # Обмеження: гравець не може вилетіти за ліву чи праву межі екрана
-        if self.rect.x < 0:
-            self.rect.x = 0
-        if self.rect.x > WINDOW_WIDTH - self.rect.width:
-            self.rect.x = WINDOW_WIDTH - self.rect.width
-
-        # Обмеження: гравець не може вилетіти за верхню чи нижню межі екрана
-        if self.rect.y < 0:
-            self.rect.y = 0
-        if self.rect.y > WINDOW_HEIGHT - self.rect.height:
-            self.rect.y = WINDOW_HEIGHT - self.rect.height
-
-    def shoot(self):
-        """Створення патрона по центру гравця та запуск звукуポストрілу."""
-        # Розраховуємо координати так, щоб куля вилітала точно з центру корабля
-        c = Cartridge(
-            BULLET_IMAGE_PATH,
-            self.rect.x + PLAYER_HITBOX_SIZE_X/2 - BULLET_HITBOX_WIDTH/2,
-            self.rect.y + PLAYER_HITBOX_SIZE_Y/2,
-            BULLET_HITBOX_WIDTH ,
-            BULLET_HITBOX_HEIGHT)
-        # Додаємо створений патрон у групу для автоматичного оновлення та малювання
-        cartridgies.add(c)
-        shoot_sound.play()
-
-    def take_damage(self, damage = 1):
-        """Зменшення здоров'я гравця при отриманні урону."""
-        # Робимо змінну циклу глобальною, щоб зупинити гру при смерті
-        global running
-        self.hp -= damage
-        print(f"Гравець отримав урон! Поточне HP: {self.hp}") # Допоможе в дебазі
-        if self.hp <= 0:
-            print("Player has been died")
-            self.kill()
-            running = False
 
 
             
