@@ -29,7 +29,7 @@ Enemy_health = 2
 
 # Стандартна швидкість руху для базового класу GameObject
 DEFAULT_SPEED = 4
-
+DEFAULT_SPEED_ENEMY = 2
 # Розміри хітбоксів (ширина та висота прямокутників зіткнення)
 PLAYER_HITBOX_SIZE_X = 55
 PLAYER_HITBOX_SIZE_Y = 40
