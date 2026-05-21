@@ -3,7 +3,8 @@ import random
 import json
 from settings import *
 
-# Ініціалізація модулів Pygame (екран, звуки, шрифти)
+# Ініціалізація модулів Pygame (екран, звуки, шрифти) 12312
+print("hello")
 pygame.init()
 pygame.mixer.init()
 pygame.font.init()
