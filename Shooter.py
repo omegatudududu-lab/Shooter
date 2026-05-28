@@ -1,6 +1,7 @@
 import pygame
 import random
 import json
+import os
 from settings import *
 from GameObject import *
 from Player import *
@@ -20,9 +21,16 @@ background = pygame.transform.scale(BACKGROUND_IMAGE_PATH, (WINDOW_WIDTH, WINDOW
 shoot_sound = pygame.mixer.Sound(DEFAULT_BLASTER_FIRE_SOUND_EFFECT)
 shoot_sound.set_volume(0.3)
 
+enemy_shoot_sound = pygame.mixer.Sound(ENEMY_SOUND_EFFECT)
+enemy_shoot_sound.set_volume(0.2)
+
 player_sounds = {
     "shoot_sound": shoot_sound 
 }
+enemy_sounds = {
+    "shoot_sound": enemy_shoot_sound 
+}
+
 
 # Завантаження фонової музики
 background_sound = pygame.mixer.music.load(BACKGROUND_SOUND)
@@ -60,14 +68,10 @@ class Label():
         """Оновлення тексту (викликається при зміні рахунку)."""
         self.text = self.font.render(new_text, True, self.color)
         
-        
 
 
-            
-
-        
-        
 enemies = pygame.sprite.Group()
+enemy_cartridgies = pygame.sprite.Group()
 cartridgies = pygame.sprite.Group()
 
 
@@ -87,18 +91,35 @@ player = Player(
 for i in range(6):
     enemy = Enemy(ENEMY_IMAGE_PATH, random.randint(0, WINDOW_WIDTH-ENEMY_HITBOX_SIZE),
                   0-ENEMY_HITBOX_SIZE*2,
-                  ENEMY_HITBOX_SIZE,ENEMY_HITBOX_SIZE)
+                  ENEMY_HITBOX_SIZE,
+                  ENEMY_HITBOX_SIZE,
+                  enemy_cartridgies,
+                  enemy_sounds
+                  )
     enemies.add(enemy)
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 # Зчитування збереженого рахунку/рекорду з JSON-файлу
-with open ("file.json", "r",encoding="UTF-8") as file:
+with open(os.path.join(BASE_DIR, "file.json"), "r", encoding="UTF-8") as file:
     data = json.load(file)
 
 # Формування початкового текста рахунку та створення графічного напису
 score_counter = data["score"]
+
+# Здоров'я беремо напряму у гравця
+іhp_counter = player.hp
+
+# Створюваня json файлу
+with open("file.json", "w", encoding="UTF-8") as file:
+    data["score"] = score_counter
+    json.dump(data, file, indent = 4)
+
 score_text = "SCORE: "+ str(score_counter)
 score_label = Label(WINDOW_WIDTH-230, WINDOW_HEIGHT-45, score_text, 40,FONT_COLOR)
 
+hp_text = "HP: " + str(player.hp)
+hp_label = Label(20, WINDOW_HEIGHT-45, hp_text, 40,FONT_COLOR)
 
 # ГОЛОВНИЙ ІГРОВИЙ ЦИКЛ
 while running:
@@ -134,6 +155,7 @@ while running:
     # Оновлюємо позиції патронів та ворогів
     cartridgies.update()
     enemies.update()
+    enemy_cartridgies.update()
     
     # Оновлюємо позицію гравця, якщо у нього є здоров'я
     if player.hp > 0:
@@ -143,14 +165,15 @@ while running:
     # 1. Спочатку малюємо ворогів та патрони
     enemies.draw(screen)
     cartridgies.draw(screen)
-    
+    enemy_cartridgies.draw(screen)
+
     # 2. Потім малюємо модельку гравця поверх них
     if player.hp > 0:
         player.draw(screen)
         
     # 3. Наприкінці малюємо інтерфейс (рахунок)
     score_label.draw()
-   
+    hp_label.draw()
     
     # ОБРОБКА ЗІТКНЕНЬ (КОЛІЗІЇ)
     
@@ -165,8 +188,9 @@ while running:
 
     # 2. Зіткнення гравця з ворогами. Ворог зникає (True), бо врізався
     # Перевіряємо, чи живий гравець, перед обробкою зіткнення з ним
-    if player.hp > 1:
+    if player.hp > 0:
         hits_enemy_player = pygame.sprite.spritecollide(player, enemies, True)
+
 
         for enemy in hits_enemy_player:
             score_counter +=1
@@ -174,14 +198,29 @@ while running:
             score_label.set_text(score_text)
             # Зменшуємо здоров'я гравця на 1 за кожного ворога
             player.take_damage()
+
+            # Оновлюємо напис ХП на екрані новими даними
+            hp_text = "HP: " + str(player.hp)
+            hp_label.set_text(hp_text)
     else:
         running = False
         with open("file.json", "w", encoding="UTF-8") as file:
             data["score"] = score_counter
             json.dump(data, file, indent=4)
-        
+    
+    # Спавн ворогів, щоб вороги не закінчувались
+    while len(enemies) < 6:
+        new_enemy = Enemy(
+            ENEMY_IMAGE_PATH, 
+            random.randint(0, WINDOW_WIDTH - ENEMY_HITBOX_SIZE), # Випадкова позиція по X
+            0 - ENEMY_HITBOX_SIZE * 2,                           # Вище екрана по Y
+            ENEMY_HITBOX_SIZE, 
+            ENEMY_HITBOX_SIZE,
+            enemy_cartridgies,
+            enemy_sounds
+        )
+        enemies.add(new_enemy)
+
     pygame.display.update()
 
-
 pygame.quit()
-

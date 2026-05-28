@@ -40,7 +40,7 @@ class Player(GameObject):
             self.rect.y = WINDOW_HEIGHT - self.rect.height
 
     def shoot(self):
-        """Створення патрона по центру гравця та запуск звукуポストрілу."""
+        """Створення патрона по центру гравця та запуск звуку."""
         # Розраховуємо координати так, щоб куля вилітала точно з центру корабля
         c = Cartridge(
             BULLET_IMAGE_PATH,
@@ -61,4 +61,3 @@ class Player(GameObject):
         if self.hp <= 0:
             print("Player has been died")
             self.kill()
-
